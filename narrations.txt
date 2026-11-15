@@ -1,0 +1,12 @@
+# Add one narration per paragraph. Separate entries with a blank line.
+# Each paragraph becomes one output WAV clip.
+
+Some nights, the world grows quiet, and every worry feels a little heavier. If that is where you are tonight, take a slow breath. You do not have to solve everything all at once.
+
+Even when the way ahead is hard to see, a small light can still find you. It may be a kind word, a familiar hand, or simply the courage to make it through this moment. Let that be enough for now.
+
+You have made it through days you once thought you could not. The strength that carried you then is still within you, steady and patient, even when you cannot feel it clearly.
+
+So take the next step gently. Rest when you need to. Begin again when you are ready. There is no need to rush your healing; your own pace is still progress.
+
+And when morning comes, remember this: you are not alone, and this difficult moment is not your whole story. Hold on to hope. Better days can find their way to you.
