@@ -36,6 +36,7 @@ Outputs are FLAC files under `output/`, with `progress.jsonl` updated after each
 
 - Use a Linux CUDA pod with Python 3.11 or 3.12. The setup installs ACE-Step from its official GitHub source.
 - The 0.6B LM uses the PyTorch backend to avoid the extra setup and memory requirements of vLLM on an 8 GB card.
+- After loading the main model, the runner checks free VRAM. If less than 2.5 GiB remains, it keeps the 0.6B LM on CPU so the RTX 3070 can reserve VRAM for audio generation. This can make the LM stage slower, but avoids the startup out-of-memory failure seen when both models are placed on an 8 GB GPU.
 - Model initialization and first-run downloads are included in wall-clock time; subsequent generations reuse the downloaded models.
 - The script checks that CUDA is available and stops instead of silently using CPU on a rented GPU.
 

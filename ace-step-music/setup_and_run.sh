@@ -60,6 +60,10 @@ cd "$ACE_REPO"
 uv sync
 
 cd "$ROOT"
+# RunPod images may set this flag globally even though ACE-Step's environment
+# does not install the optional hf_transfer package. Avoid a guaranteed first
+# download failure and use huggingface_hub's standard downloader instead.
+export HF_HUB_ENABLE_HF_TRANSFER=0
 say "Starting background music generation."
 exec uv run --project "$ACE_REPO" python "$ROOT/generate_music.py" "$@"
 

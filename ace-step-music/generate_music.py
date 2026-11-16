@@ -91,6 +91,19 @@ def main() -> int:
 
     lm = LLMHandler()
     checkpoint_dir = HERE / ".vendor" / "ACE-Step-1.5" / "checkpoints"
+    lm_offload_to_cpu = False
+    if args.device == "cuda" and torch.cuda.is_available():
+        free_bytes, total_bytes = torch.cuda.mem_get_info()
+        free_gib = free_bytes / 1024**3
+        total_gib = total_bytes / 1024**3
+        # The 2B DiT/VAE/text encoder already occupy most of an 8 GB card.
+        # Keep at least 2.5 GiB free before placing the additional LM on CUDA.
+        lm_offload_to_cpu = free_gib < 2.5
+        print(
+            f"VRAM after main model load: {free_gib:.2f}/{total_gib:.2f} GiB free; "
+            f"language model placement: {'CPU' if lm_offload_to_cpu else 'CUDA'}",
+            flush=True,
+        )
     print(f"Ensuring language model is available: {args.lm_model}", flush=True)
     lm_ok, lm_message = ensure_lm_model(args.lm_model, checkpoint_dir)
     print(lm_message, flush=True)
@@ -101,7 +114,7 @@ def main() -> int:
         lm_model_path=args.lm_model,
         backend="pt",
         device=args.device,
-        offload_to_cpu=False,
+        offload_to_cpu=lm_offload_to_cpu,
     )
     print(status, flush=True)
     if not ok:
