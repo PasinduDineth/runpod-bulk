@@ -84,7 +84,7 @@ def main() -> int:
 
     try:
         import torch
-        from acestep.model_downloader import ensure_lm_model
+        from acestep.model_downloader import ensure_dit_model, ensure_lm_model
         from acestep.handler import AceStepHandler
         from acestep.llm_inference import LLMHandler
         from acestep.inference import GenerationConfig, GenerationParams, generate_music
@@ -110,6 +110,13 @@ def main() -> int:
         props = torch.cuda.get_device_properties(0)
         print(f"GPU: {props.name} | {props.total_memory / 1024**3:.1f} GiB", flush=True)
 
+    checkpoint_dir = HERE / ".vendor" / "ACE-Step-1.5" / "checkpoints"
+    print(f"Ensuring DiT model is available: {args.dit_model}", flush=True)
+    dit_ok, dit_message = ensure_dit_model(args.dit_model, checkpoint_dir)
+    print(dit_message, flush=True)
+    if not dit_ok:
+        return 1
+
     dit = AceStepHandler()
     status, ok = dit.initialize_service(
         project_root=str(HERE / ".vendor" / "ACE-Step-1.5"),
@@ -124,7 +131,6 @@ def main() -> int:
         return 1
 
     lm = LLMHandler()
-    checkpoint_dir = HERE / ".vendor" / "ACE-Step-1.5" / "checkpoints"
     lm_offload_to_cpu = False
     if args.device == "cuda" and torch.cuda.is_available():
         free_bytes, total_bytes = torch.cuda.mem_get_info()
@@ -147,7 +153,10 @@ def main() -> int:
         checkpoint_dir=str(checkpoint_dir),
         lm_model_path=args.lm_model,
         backend="pt",
-        device=args.device,
+        # ACE-Step's offload mode moves the full LM onto its target device for
+        # each inference. On an 8 GB card the DiT leaves too little VRAM for
+        # that transfer, so target CPU directly when the LM must be offloaded.
+        device="cpu" if lm_offload_to_cpu else args.device,
         offload_to_cpu=lm_offload_to_cpu,
     )
     print(status, flush=True)
@@ -164,10 +173,10 @@ def main() -> int:
         inference_steps=args.inference_steps,
         guidance_scale=args.guidance_scale,
         shift=args.shift,
-        thinking=True,
-        use_cot_metas=True,
-        use_cot_caption=True,
-        use_cot_language=True,
+        thinking=False,
+        use_cot_metas=False,
+        use_cot_caption=False,
+        use_cot_language=False,
     )
 
     for track_index in range(args.count):
