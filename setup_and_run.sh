@@ -154,5 +154,11 @@ export HF_HOME="${HF_HOME:-$ROOT/.cache/huggingface}"
 export PYTORCH_CUDA_ALLOC_CONF="${PYTORCH_CUDA_ALLOC_CONF:-expandable_segments:True}"
 mkdir -p "$HF_HOME"
 
-say "Starting resumable bulk generation. Model downloads automatically on first run."
-exec "$PY" "$ROOT/bulk_generate.py" "$@"
+say "Starting Qwen narration generation. Model downloads automatically on first run."
+RUNNER="$ROOT/bulk_generate.py"
+case "${QWEN_TTS_MODE:-voice-design}" in
+  voice-design) ;;
+  clone) RUNNER="$ROOT/voice_clone_generate.py" ;;
+  *) say "QWEN_TTS_MODE must be 'voice-design' or 'clone'."; exit 2 ;;
+esac
+exec "$PY" "$RUNNER" "$@"

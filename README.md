@@ -15,6 +15,18 @@ This folder is a standalone bulk narration tool for a rented Linux GPU. It insta
 
 The default model is `Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign`, so it uses the supplied voice description. Model weights are downloaded into `.cache/huggingface` on the first run and reused later.
 
+## Reference voice cloning with pacing controls
+
+To use `clone.mp3` as a reusable speaker reference, switch the runner to clone mode:
+
+```bash
+QWEN_TTS_MODE=clone bash setup_and_run.sh --limit 5 --speed 1.0 --sentence-pause 1.0 --comma-pause 0.25 --output output-clone
+```
+
+This uses `Qwen/Qwen3-TTS-12Hz-1.7B-Base` and reuses one speaker prompt for the run. The generator splits each narration at its existing sentence and comma punctuation, generates each phrase, then inserts the configured silence between phrases. It does not require ellipses or pause markup in `narrations.txt`.
+
+Qwen's Base voice-clone API has no native speech-rate parameter. `--speed` is our generator's pitch-preserving post-processing control: `1.0` keeps the generated speech rate, while `0.85` makes the spoken phrases about 18% longer without stretching the inserted pauses. `--sentence-pause` and `--comma-pause` set the inserted silence lengths in seconds. Pause controls default to 1.0 and 0.25 seconds; `--speed` defaults to 1.0. Phrase-by-phrase cloning takes longer than one batch call, but keeps pause timing independent from speaking rate.
+
 ## GPU selection and batching
 
 The runner reports visible GPU names and free VRAM, selects the GPU with the most free memory, loads one copy of the model, then chooses a conservative batch size from the VRAM left after model loading. It uses Qwen's list/batch inference API to generate multiple narrations together, avoiding multiple model copies competing for VRAM. If a batch runs out of memory, it automatically retries with a smaller batch. You can override the automatic size with `--batch-size 1`, `--batch-size 2`, and so on; `--max-batch-size` caps auto mode (default 16).
