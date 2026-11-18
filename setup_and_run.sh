@@ -156,9 +156,9 @@ mkdir -p "$HF_HOME"
 
 say "Starting Qwen narration generation. Model downloads automatically on first run."
 RUNNER="$ROOT/bulk_generate.py"
-case "${QWEN_TTS_MODE:-voice-design}" in
+case "${QWEN_TTS_MODE:-clone}" in
   voice-design) ;;
   clone) RUNNER="$ROOT/voice_clone_generate.py" ;;
-  *) say "QWEN_TTS_MODE must be 'voice-design' or 'clone'."; exit 2 ;;
+  *) say "QWEN_TTS_MODE must be 'clone' or 'voice-design'."; exit 2 ;;
 esac
 exec "$PY" "$RUNNER" "$@"

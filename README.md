@@ -4,28 +4,35 @@ This folder is a standalone bulk narration tool for a rented Linux GPU. It insta
 
 ## Use it
 
-1. Copy this whole `qwen-tts-bulk` folder to the rented machine.
+1. Clone this repository on the rented machine:
+
+   ```bash
+   git clone https://github.com/PasinduDineth/runpod-bulk.git
+   cd runpod-bulk
+   ```
+
 2. Put one narration in each paragraph of `narrations.txt`. Separate entries with a blank line. Keep paragraph breaks inside a narration only if they should be separate clips.
-3. Edit `voice_description.txt` if needed.
-4. In the folder, run:
+3. The reference voice is included as `clone.mp3`. Run the generator:
 
    ```bash
    bash setup_and_run.sh
    ```
 
-The default model is `Qwen/Qwen3-TTS-12Hz-1.7B-VoiceDesign`, so it uses the supplied voice description. Model weights are downloaded into `.cache/huggingface` on the first run and reused later.
+The default is the accepted voice-clone setup: `Qwen/Qwen3-TTS-12Hz-1.7B-Base` with `clone.mp3`, native speech rate (`1.0`), 0.6 seconds between sentences, and no added comma pauses. It reads `narrations.txt` and saves WAVs in `output-voice-clone/`, with a progress record after each narration. The setup installs the isolated environment and downloads model weights automatically on first run. Later runs in the same pod reuse `.venv/` and `.cache/huggingface/`.
 
 ## Reference voice cloning with pacing controls
 
-To use `clone.mp3` as a reusable speaker reference, switch the runner to clone mode:
+To use the alternative VoiceDesign mode and `voice_description.txt`:
 
 ```bash
-QWEN_TTS_MODE=clone bash setup_and_run.sh --limit 5 --speed 1.0 --sentence-pause 1.0 --comma-pause 0.25 --output output-clone
+QWEN_TTS_MODE=voice-design bash setup_and_run.sh
 ```
 
-This uses `Qwen/Qwen3-TTS-12Hz-1.7B-Base` and reuses one speaker prompt for the run. The generator splits each narration at its existing sentence and comma punctuation, generates each phrase, then inserts the configured silence between phrases. It does not require ellipses or pause markup in `narrations.txt`.
+Clone mode reuses one speaker prompt from the committed `clone.mp3` for the whole run. The generator splits at existing sentence and comma punctuation, then inserts the configured silence between phrases. With the saved defaults, commas remain contiguous and only sentence boundaries receive a pause. It does not require ellipses or pause markup in `narrations.txt`.
 
-Qwen's Base voice-clone API has no native speech-rate parameter. `--speed` is our generator's pitch-preserving post-processing control: `1.0` keeps the generated speech rate, while `0.85` makes the spoken phrases about 18% longer without stretching the inserted pauses. `--sentence-pause` and `--comma-pause` set the inserted silence lengths in seconds. Pause controls default to 1.0 and 0.25 seconds; `--speed` defaults to 1.0. Phrase-by-phrase cloning takes longer than one batch call, but keeps pause timing independent from speaking rate.
+Qwen's Base voice-clone API has no native speech-rate parameter. `--speed` is our generator's pitch-preserving post-processing control: `1.0` keeps the generated speech rate, while `0.85` makes the spoken phrases about 18% longer without stretching the inserted pauses. `--sentence-pause` and `--comma-pause` set the inserted silence lengths in seconds. The saved defaults are `--speed 1.0 --sentence-pause 0.6 --comma-pause 0`. Phrase-by-phrase cloning takes longer than one batch call, but keeps pause timing independent from speaking rate.
+
+For a new rented pod, cloning the repository and running `bash setup_and_run.sh` is sufficient. The pod needs network access for package/model downloads. Pod-local `.venv/`, `.cache/huggingface/`, and output files are not in Git; they are recreated on a fresh pod. To avoid downloading the model again, mount persistent storage and point `HF_HOME` at a directory on that volume before running. Keep the reference audio and narration text in Git; generated audio stays in the output folder and is not committed by default.
 
 ## GPU selection and batching
 
